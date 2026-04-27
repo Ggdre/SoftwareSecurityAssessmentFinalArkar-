@@ -1,0 +1,35 @@
+name: Task E - Supply Chain Audit (SBOM)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: Build and Scan Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build local container image
+        run: docker build -t temp-target:latest ./webapp
+
+      - name: Run Anchore Syft (CycloneDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          image: "temp-target:latest"
+          format: "cyclonedx-json"
+          output-file: "sbom.cyclonedx.json"
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: sbom.cyclonedx.json
